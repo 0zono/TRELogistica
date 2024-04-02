@@ -1,11 +1,41 @@
+<!-- gerar_solicitacao.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>gerar solicitação de urnas</title>
+    <title>Gerar Solicitação</title>
 </head>
 <body>
-    <h1>teste</h1>
+    <h1>Gerar Solicitação</h1>
+
+    <form action="{% url 'logis:gerar_solicitacao_urnas' %}" method="get">
+        <label for="municipio">Selecione um município:</label>
+        <select name="municipio_id" id="municipio">
+            {% for municipio in municipios %}
+                <option value="{{ municipio.id }}">{{ municipio.nome }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Gerar Solicitação</button>
+    </form>
+
+    {% if message_ue %}
+        <p>{{ message_ue }}</p>
+    {% endif %}
+    {% if message_cont %}
+        <p>{{ message_cont }}</p>
+    {% endif %}
+
+    {% if nova_solicitacao_ue %}
+        <h2>Nova solicitação de urnas eleitorais:</h2>
+        <p>Municipio: {{ nova_solicitacao_ue.municipio }}</p>
+        <!-- Display other relevant information -->
+    {% endif %}
+    {% if nova_solicitacao_cont %}
+        <h2>Nova solicitação de urnas de contingência:</h2>
+        <p>Municipio: {{ nova_solicitacao_cont.municipio }}</p>
+        <!-- Display other relevant information -->
+    {% endif %}
 </body>
 </html>
