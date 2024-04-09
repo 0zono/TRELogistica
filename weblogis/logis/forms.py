@@ -1,13 +1,19 @@
 from django import forms
-from .models import Municipios
-from .models import ZE
+from .models import Municipios, ZE, Secao
+
 
 class MunicipioForm(forms.ModelForm):
     class Meta:
         model = Municipios
-        fields = '__all__'  # Use '__all__' para incluir todos os campos do modelo no formulário
+        fields = ['nome', 'KM_Cuiaba', 'muni_id', 'sede', 'zona_eleitoral']
+
 
 class ZEForm(forms.ModelForm):
     class Meta:
         model = ZE
+        fields = '__all__'
+
+class secaoForm(forms.ModelForm):
+    class Meta:
+        model = Secao
         fields = '__all__'

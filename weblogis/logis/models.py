@@ -40,13 +40,17 @@ class Municipios(models.Model):
     zona_eleitoral = models.ForeignKey(ZE, on_delete=models.CASCADE, related_name='municipios')
     KM_Cuiaba = models.DecimalField(max_digits=10, decimal_places=2)
     sede = models.BooleanField(default=False)
-    qtd_secao = models.IntegerField()
-    mrjs = models.IntegerField()
-    qtd_ue = models.IntegerField()
-    qtd_ue_cont = models.IntegerField()
+    qtd_secao = models.IntegerField(default=0)  # Defina um valor padrão aqui
+    mrjs = models.IntegerField(default=0)
+    qtd_ue = models.IntegerField(default=0)
+    qtd_ue_cont = models.IntegerField(default=0)
+    nome = models.CharField(max_length=100, default="sem_nome")  
 
     class Meta:
         verbose_name_plural = "Municipios"
+
+
+
 
 
 class ZE_solicita_UE(models.Model):

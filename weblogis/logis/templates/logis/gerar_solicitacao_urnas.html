@@ -14,11 +14,17 @@
         <label for="municipio">Selecione um município:</label>
         <select name="municipio_id" id="municipio">
             {% for municipio in municipios %}
-                <option value="{{ municipio.id }}">{{ municipio.nome }}</option>
+                <option value="{{ municipio.muni_id }}">{{ municipio.nome }}</option>
             {% endfor %}
         </select>
         <button type="submit">Gerar Solicitação</button>
     </form>
+    
+
+    <!-- Placeholder text to verify functionality -->
+    <div id="placeholder-text">
+        <p>Placeholder text. This text will change after clicking the button.</p>
+    </div>
 
     {% if message_ue %}
         <p>{{ message_ue }}</p>
