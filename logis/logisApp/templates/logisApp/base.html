@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Logística Eleitoral{% endblock %}</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="{% url 'index' %}">Logística Eleitoral</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownAdicionar" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Adicionar
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdownAdicionar">
+                    <a class="dropdown-item" href="{% url 'adicionar_municipio' %}">Adicionar Município</a>
+                    <a class="dropdown-item" href="{% url 'adicionar_urnas' %}">Adicionar Urnas</a>
+                    <a class="dropdown-item" href="{% url 'adicionar_materiais' %}">Adicionar Materiais</a>
+                    <a class="dropdown-item" href="{% url 'adicionar_zonas' %}">Adicionar Zonas</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownRemover" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Remover
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdownRemover">
+                    <a class="dropdown-item" href="{% url 'remover_municipio' %}">Remover Município</a>
+                    <a class="dropdown-item" href="{% url 'remover_urnas' %}">Remover Urnas</a>
+                    <a class="dropdown-item" href="{% url 'remover_materiais' %}">Remover Materiais</a>
+                    <a class="dropdown-item" href="{% url 'remover_zonas' %}">Remover Zonas</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownListar" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Listar
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdownListar">
+                    <a class="dropdown-item" href="{% url 'listar_municipios' %}">Listar Municípios</a>
+                    <a class="dropdown-item" href="{% url 'listar_urnas' %}">Listar Urnas</a>
+                    <a class="dropdown-item" href="{% url 'listar_materiais' %}">Listar Materiais</a>
+                    <a class="dropdown-item" href="{% url 'listar_zonas' %}">Listar Zonas</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownDistribuir" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Distribuir
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdownDistribuir">
+                    <a class="dropdown-item" href="{% url 'distribuir_tudo' %}">Distribuir Urnas</a>
+                    <a class="dropdown-item" href="{% url 'distribuir_materiais' %}">Distribuir Materiais</a>
+                </div>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownRelatorios" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    Relatórios
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdownRelatorios">
+                    <a class="dropdown-item" href="{% url 'relatorio_urnas' %}">Relatório de Urnas</a>
+                    <a class="dropdown-item" href="{% url 'relatorio_materiais' %}">Relatório de Materiais</a>
+                    <a class="dropdown-item" href="{% url 'relatorio_zonas' %}">Relatório de Zonas</a>
+                    <a class="dropdown-item" href="{% url 'relatorio_geral' %}">Relatório geral</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<div class="container mt-5">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</body>
+</html>

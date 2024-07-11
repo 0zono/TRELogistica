@@ -1,0 +1,11 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Distribuir Urnas e Materiais{% endblock %}
+
+{% block content %}
+<h1>Distribuir Urnas e Materiais</h1>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-primary">Distribuir Tudo</button>
+</form>
+{% endblock %}

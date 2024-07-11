@@ -1,0 +1,14 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Listar Urnas{% endblock %}
+
+{% block content %}
+<h1>Urnas</h1>
+<ul class="list-group">
+    {% for urna in urnas %}
+        <li class="list-group-item">
+            {{ urna.modelo }} - Bio: {{ urna.bio }} - Zona Eleitoral: {{ urna.zona_eleitoral.nome }}
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

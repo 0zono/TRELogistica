@@ -1,0 +1,28 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Remover Município{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Remover Município</h1>
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="municipio">Selecione o Município:</label>
+            <select class="form-control" id="municipio" name="municipio_id">
+                {% for municipio in municipios %}
+                    <option value="{{ municipio.id }}">{{ municipio.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-danger">Remover Município</button>
+    </form>
+</div>
+{% endblock %}

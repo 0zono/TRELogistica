@@ -1,0 +1,127 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<h1>Bem-vindo à Logística Eleitoral</h1>
+<p>Escolha uma das opções do menu para começar.</p>
+
+<h2>Resumo</h2>
+<p>Total de Seções: {{ total_secoes }}</p>
+<p>Total de Urnas em Estoque (Zona 53): {{ total_urnas_estoque }}</p>
+<p>Total de Urnas Utilizáveis: {{ total_urnas_utilizaveis }}</p>
+
+<h2>Zonas Eleitorais</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Quantidade de Seções</th>
+            <th>Quantidade de Urnas no Estoque</th>
+            <th>Quantidade de Urnas MRV</th>
+            <th>Quantidade de Urnas de Contingência</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for zona in zonas %}
+        <tr>
+            <td>{{ zona.id }}</td>
+            <td>{{ zona.nome }}</td>
+            <td>{{ zona.qtdSecoes }}</td>
+            <td>{{ zona.qtdUrnasEstoque }}</td>
+            <td>{{ zona.qtdUrnasMRV }}</td>
+            <td>{{ zona.qtdUrnasCont }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Urnas</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Modelo</th>
+            <th>Biometria</th>
+            <th>Zona Eleitoral</th>
+            <th>Quantidade</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for urna in urnas %}
+        <tr>
+            <td>{{ urna.id }}</td>
+            <td>{{ urna.modelo }}</td>
+            <td>{{ urna.bio|yesno:"Sim,Não" }}</td>
+            <td>{{ urna.zona_eleitoral.nome }}</td>
+            <td>{{ urna.qtd }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Municípios</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for municipio in municipios %}
+        <tr>
+            <td>{{ municipio.id }}</td>
+            <td>{{ municipio.nome }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Municípios-Zonas</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Município</th>
+            <th>Zona</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for municipio_zona in municipios_zonas %}
+        <tr>
+            <td>{{ municipio_zona.id }}</td>
+            <td>{{ municipio_zona.municipio.nome }}</td>
+            <td>{{ municipio_zona.zona.nome }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Solicitações de Urnas</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Zona Eleitoral</th>
+            <th>Urna</th>
+            <th>Data da Solicitação</th>
+            <th>Quantidade</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for solicitacao in solicitacoes_urnas %}
+        <tr>
+            <td>{{ solicitacao.id }}</td>
+            <td>{{ solicitacao.zona_eleitoral.nome }}</td>
+            <td>{{ solicitacao.urna.modelo }}</td>
+            <td>{{ solicitacao.data_solicitacao }}</td>
+            <td>{{ solicitacao.quantidade }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'distribuir_tudo' %}?zona_estoque_id=53" class="btn btn-primary">Distribuir Urnas</a>
+{% endblock %}

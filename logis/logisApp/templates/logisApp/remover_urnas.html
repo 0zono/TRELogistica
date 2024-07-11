@@ -1,0 +1,28 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Remover Urnas{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Remover Urnas</h1>
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="urna">Selecione a Urna:</label>
+            <select class="form-control" id="urna" name="urna_id">
+                {% for urna in urnas %}
+                    <option value="{{ urna.id }}">{{ urna.modelo }} (ID: {{ urna.id }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-danger">Remover Urna</button>
+    </form>
+</div>
+{% endblock %}

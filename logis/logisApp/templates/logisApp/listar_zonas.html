@@ -1,0 +1,27 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Listar Zonas{% endblock %}
+
+{% block content %}
+<h1>Zonas</h1>
+<ul class="list-group">
+    {% for zona in zonas %}
+        <li class="list-group-item">
+            <h2>{{ zona.nome }}</h2>
+            <p>Quantidade de Seções: {{ zona.qtdSecoes }}</p>
+            <p>Quantidade de Urnas em Estoque: {{ zona.qtdUrnasEstoque }}</p>
+            <p>Quantidade de Urnas MRV em Estoque: {{ zona.qtdUrnasMRV }}</p>
+            <p>Quantidade de Urnas Contingencia em Estoque: {{ zona.qtdUrnasCont }}</p>
+            <h3>Solicitações de Urnas:</h3>
+            <ul>
+                {% for solicitacao in zona.ze_solicita_urna_set.all %}
+                    <li>
+                        {{ solicitacao.urna.modelo }} - Quantidade solicitada: {{ solicitacao.quantidade }}
+                        - Data da solicitação: {{ solicitacao.data_solicitacao }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

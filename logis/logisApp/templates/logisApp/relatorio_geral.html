@@ -1,0 +1,59 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Relatório Geral - Urnas por Zona{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Relatório Geral - Urnas por Zona</h1>
+
+    <div id="chartsContainer">
+        <!-- Aqui vamos adicionar os gráficos -->
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Obtemos os dados do contexto passado pelo Django
+    const zonaUrnasData = {{ zona_urnas_data|safe }};
+
+    // Iteramos sobre as zonas
+    zonaUrnasData.forEach(zona => {
+        // Criamos um título para o gráfico
+        const title = document.createElement('h3');
+        title.textContent = `Zona Eleitoral: ${zona.nome}`;
+        document.getElementById('chartsContainer').appendChild(title);
+
+        // Criamos um canvas para o gráfico
+        const canvas = document.createElement('canvas');
+        canvas.id = `urnasPorModeloChart-${zona.nome.replace(/\s+/g, '-').toLowerCase()}`;
+        document.getElementById('chartsContainer').appendChild(canvas);
+
+        // Obtemos os dados para o gráfico
+        const labels = zona.urnas.map(urna => urna.modelo);
+        const data = zona.urnas.map(urna => urna.qtd);
+
+        // Criamos o gráfico
+        const ctx = document.getElementById(canvas.id).getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Urnas de modelo',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

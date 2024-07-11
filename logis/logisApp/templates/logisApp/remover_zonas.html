@@ -1,0 +1,28 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Remover Zonas{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Remover Zonas</h1>
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="zona">Selecione a Zona:</label>
+            <select class="form-control" id="zona" name="zona_id">
+                {% for zona in zonas %}
+                    <option value="{{ zona.id }}">{{ zona.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-danger">Remover Zona</button>
+    </form>
+</div>
+{% endblock %}

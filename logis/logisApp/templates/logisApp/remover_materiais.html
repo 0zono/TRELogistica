@@ -1,0 +1,28 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Remover Materiais{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Remover Materiais</h1>
+    {% if messages %}
+        <div>
+            {% for message in messages %}
+                <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="material">Selecione o Material:</label>
+            <select class="form-control" id="material" name="material_id">
+                {% for material in materiais %}
+                    <option value="{{ material.id }}">{{ material.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-danger">Remover Material</button>
+    </form>
+</div>
+{% endblock %}

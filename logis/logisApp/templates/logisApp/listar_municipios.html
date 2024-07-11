@@ -1,0 +1,12 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Listar Municípios{% endblock %}
+
+{% block content %}
+<h1>Municípios</h1>
+<ul class="list-group">
+    {% for municipio in municipios %}
+        <li class="list-group-item">{{ municipio.nome }}</li>
+    {% endfor %}
+</ul>
+{% endblock %}

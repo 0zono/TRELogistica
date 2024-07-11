@@ -1,0 +1,14 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Listar Materiais{% endblock %}
+
+{% block content %}
+<h1>Materiais</h1>
+<ul class="list-group">
+    {% for material in materiais %}
+        <li class="list-group-item">
+            {{ material.nome }} ({{ material.tipo }}) - Quantidade: {{ material.quantidade }}
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}
