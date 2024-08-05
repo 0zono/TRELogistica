@@ -1,4 +1,4 @@
-# Meu Projeto Django
+# Projeto de logística TRE
 
 ## Dependências Necessárias
 
