@@ -1,11 +1,27 @@
 {% extends 'logisApp/base.html' %}
 
-{% block title %}Distribuir Urnas e Materiais{% endblock %}
+{% block title %}Distribuir Urnas{% endblock %}
 
 {% block content %}
-<h1>Distribuir Urnas e Materiais</h1>
-<form method="post">
+<h1>Distribuir Urnas</h1>
+<form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <button type="submit" class="btn btn-primary">Distribuir Tudo</button>
+    <label for="zona_estoque_id">Selecionar Zona de Estoque:</label>
+    <select name="zona_estoque_id" id="zona_estoque_id" class="form-control">
+        {% for zona in zonas %}
+            <option value="{{ zona.id }}">{{ zona.nome }}</option>
+        {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary">Distribuir</button>
 </form>
+
+{% if messages %}
+    <div class="alert alert-info mt-3">
+        <ul>
+            {% for message in messages %}
+                <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endif %}
 {% endblock %}

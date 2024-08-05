@@ -1,14 +1,25 @@
 {% extends 'logisApp/base.html' %}
 
-{% block title %}Listar Materiais{% endblock %}
+{% block title %}Listar Distribuições{% endblock %}
 
 {% block content %}
-<h1>Materiais</h1>
+<h1>Distribuições Realizadas</h1>
 <ul class="list-group">
-    {% for material in materiais %}
+    {% for log in logs %}
         <li class="list-group-item">
-            {{ material.nome }} ({{ material.tipo }}) - Quantidade: {{ material.quantidade }}
+            <h2>Zona Eleitoral: {{ log.zona_eleitoral.nome }}</h2>
+            <p>Urna: 
+                {% if log.urna %}
+                    {{ log.urna.modelo }}
+                {% else %}
+                    Deleted Urna
+                {% endif %}
+            </p>
+            <p>Quantidade: {{ log.quantity }}</p>
+            <p>Data: {{ log.created_at }}</p>
         </li>
+    {% empty %}
+        <li class="list-group-item">Nenhuma distribuição encontrada!!.</li>
     {% endfor %}
 </ul>
 {% endblock %}

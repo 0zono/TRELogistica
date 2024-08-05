@@ -1,0 +1,57 @@
+{% extends 'logisApp/base.html' %}
+
+{% block title %}Distribuição Manual de Urnas{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Distribuição Manual de Urnas</h1>
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Selecione a Zona de Estoque -->
+        <div class="form-group">
+            <label for="zona_estoque_id">Selecione a Zona de Estoque:</label>
+            <select name="zona_estoque_id" id="zona_estoque_id" class="form-control">
+                {% for zona in zonas %}
+                    <option value="{{ zona.id }}">{{ zona.nome }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <!-- Selecione as Zonas de Destino como cartões -->
+        <div class="card-container mt-4">
+            {% for zona in zonas %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">{{ zona.nome }}</h5>
+                    <p class="card-text">Quantidade de Seções: {{ zona.qtdSecoes }}</p>
+                    <p class="card-text">Quantidade de Urnas em Estoque: {{ zona.qtdUrnasEstoque }}</p>
+                    <p class="card-text">Quantidade de Urnas MRV em Estoque: {{ zona.qtdUrnasMRV }}</p>
+                    <p class="card-text">Quantidade de Urnas Contingência em Estoque: {{ zona.qtdUrnasCont }}</p>
+                    
+                    <!-- Checkbox para Distribuição -->
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="zonas_ids" value="{{ zona.id }}" id="zona_{{ zona.id }}">
+                        <label class="form-check-label" for="zona_{{ zona.id }}">
+                            Distribuir
+                        </label>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Selecione o Tipo de Urna -->
+        <div class="form-group mt-4">
+            <label for="tipo_urna">Tipo de Urna:</label>
+            <select name="tipo_urna" id="tipo_urna" class="form-control">
+                <option value="primario">Primário</option>
+                <option value="contingencia">Contingência</option>
+            </select>
+        </div>
+        
+        <!-- Botão de Envio -->
+        <button type="submit" class="btn btn-primary">Distribuir</button>
+    </form>
+</div>
+{% endblock %}
