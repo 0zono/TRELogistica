@@ -26,6 +26,7 @@ meu_ambiente\Scripts\activate
 source meu_ambiente/bin/activate
 ```
 ### 2. Criar e Ativar um Ambiente Virtual
+Criar o ambiente no mesmo diretório do projeto Django
 ```sh
 # Criar um ambiente virtual
 python -m venv meu_ambiente
@@ -44,7 +45,7 @@ pip install Django>=5.0.6
 ```
 
 ### 4. Instalar Jinja e Jinja2
-
+Motores de template, usados para desenvolver o template
 ```sh
 4. Instalar Jinja e Jinja2
 ```
