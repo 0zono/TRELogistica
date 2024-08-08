@@ -55,8 +55,8 @@
                     Distribuir
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdownDistribuir">
-                    <a class="dropdown-item" href="{% url 'distribuir_tudo' %}">Distribuir Urnas</a>
-                    <a class="dropdown-item" href="{% url 'distribuir_materiais' %}">Distribuir Materiais</a>
+                    <a class="dropdown-item" href="{% url 'distribuir_tudo' %}">Distribuir Automaticamente</a>
+                    <a class="dropdown-item" href="{% url 'distribuir_manual' %}">Distribuir Manualmente</a>
                 </div>
             </li>
             <li class="nav-item dropdown">
@@ -64,10 +64,6 @@
                     Relatórios
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdownRelatorios">
-                    <a class="dropdown-item" href="{% url 'relatorio_urnas' %}">Relatório de Urnas</a>
-                    <a class="dropdown-item" href="{% url 'relatorio_materiais' %}">Relatório de Materiais</a>
-                    <a class="dropdown-item" href="{% url 'relatorio_zonas' %}">Relatório de Zonas</a>
-                    <a class="dropdown-item" href="{% url 'relatorio_geral' %}">Relatório geral</a>
                 </div>
             </li>
         </ul>
