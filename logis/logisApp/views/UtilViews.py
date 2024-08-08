@@ -1,16 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from ..models import Municipio, Urna, MaterialEleitoral, ZonaEleitoral, MunicipioZona, Secao, DistributionLog, Distribuicao, Solicitacao
-from ..forms import MunicipioForm, UrnaForm, MaterialEleitoralForm, ZonaEleitoralForm, UploadFileForm, ZonaDistributionForm, ZonaEstoqueForm, ZonaEleitoralFormSet, DistribuicaoForm, DistribuicaoFormSet
-from django.db.models import Sum, Count
+from ..models import Municipio, Urna, ZonaEleitoral, MunicipioZona, Solicitacao, Distribuicao, DistributionLog
+from django.db.models import Sum
 from django.http import JsonResponse
-import logging
-import pandas as pd
-from django.core.files.storage import FileSystemStorage
-from django.contrib import messages
-import json
-from django.forms import modelformset_factory
-from django.core.paginator import Paginator
+
 
 def index(request):
     zonas = ZonaEleitoral.objects.all()
@@ -22,7 +15,7 @@ def index(request):
     # Calcular total de seções
     total_secoes = sum(zona.qtdSecoes for zona in zonas)
 
-    # Calcular total de urnas em estoque para a zona com id = 53
+    # Calcular total de urnas em estoque para a zona com id = 58
     try:
         zona_estoque = ZonaEleitoral.objects.get(id=58)
         total_urnas_estoque = zona_estoque.qtdUrnasEstoque
@@ -56,7 +49,6 @@ def get_qtd_urnas(zona):
 
 def get_qtd_cont(zona):
     return 0
-
 
 def is_compatible(primary_model, cont_model):
     if primary_model == '2020':
@@ -92,17 +84,15 @@ def contNecessarias(pk):
     qtd = zona.qtdSecoes * 0.15
     return qtd
 
-def is_compatible(primary_model, contingency_model):
-    return True
-
 @login_required
 def distribuir_manual(request):
     if request.method == 'POST':
         zona_estoque_id = request.POST.get('zona_estoque_id')
         zonas_ids = request.POST.getlist('zonas_ids')
-        tipo_urna = request.POST.get('tipo_urna')  # 'primario' or 'contingencia'
+        tipo_urna = request.POST.get('tipo_urna')  # 'primario', 'contingencia', or 'ambos'
+        urna_modelo = request.POST.get('urna_modelo')
 
-        if not zona_estoque_id or not zonas_ids or not tipo_urna:
+        if not zona_estoque_id or not zonas_ids or not tipo_urna or not urna_modelo:
             return JsonResponse({'messages': ['Dados insuficientes para a distribuição.']}, status=400)
 
         try:
@@ -111,7 +101,7 @@ def distribuir_manual(request):
             return JsonResponse({'messages': ['Zona de estoque não encontrada.']}, status=404)
 
         distribuicao = Distribuicao.objects.create(distributed_by=request.user, stock_zone=zona_estoque)
-        urnas_estoque = Urna.objects.filter(zona_eleitoral=zona_estoque).order_by('-modelo')
+        urnas_estoque = Urna.objects.filter(zona_eleitoral=zona_estoque, modelo=urna_modelo).order_by('-modelo')
         messages = []
 
         # Zerar a quantidade de urnas nas zonas de destino
@@ -124,9 +114,10 @@ def distribuir_manual(request):
                     zona.qtdUrnasEstoque = 0
                     zona.save()
                 except ZonaEleitoral.DoesNotExist:
+                    messages.append(f"Zona com ID {zona_id} não encontrada.")
                     continue
 
-        # Fazer a distribuição
+        # Fazer a distribuição manual
         for zona_id in zonas_ids:
             try:
                 zona = ZonaEleitoral.objects.get(id=zona_id)
@@ -134,15 +125,70 @@ def distribuir_manual(request):
                 messages.append(f"Zona com ID {zona_id} não encontrada.")
                 continue
 
-            if tipo_urna == 'primario':
-                qtd_urnas_necessarias = zona.qtdSecoes
-            elif tipo_urna == 'contingencia':
-                qtd_urnas_necessarias = int(zona.qtdSecoes * 0.12)
-            else:
-                return JsonResponse({'messages': ['Tipo de urna inválido.']}, status=400)
-
             urnas_distribuidas = {}
+            if tipo_urna in ['primario', 'ambos']:
+                qtd_urnas_necessarias = zona.qtdSecoes
 
+                for urna in urnas_estoque:
+                    if qtd_urnas_necessarias > 0 and urna.qtd > 0:
+                        if urna.qtd >= qtd_urnas_necessarias:
+                            urnas_distribuidas[urna.modelo] = qtd_urnas_necessarias
+                            urna.qtd -= qtd_urnas_necessarias
+                            qtd_urnas_necessarias = 0
+                        else:
+                            urnas_distribuidas[urna.modelo] = urna.qtd
+                            qtd_urnas_necessarias -= urna.qtd
+                            urna.qtd = 0
+                        urna.save()
+
+                zona.qtdUrnasMRV = sum(urnas_distribuidas.values())
+                zona.qtdUrnasEstoque = zona.qtdUrnasMRV
+                zona.save()
+
+                for modelo, quantidade in urnas_distribuidas.items():
+                    urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
+                    if urna_queryset.exists() and quantidade > 0:
+                        urna = urna_queryset.first()
+                        Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
+                        Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
+                        DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type='PRIMARIO')
+
+            if tipo_urna in ['contingencia', 'ambos']:
+                qtd_contingencia_necessarias = int(zona.qtdSecoes * 0.12)
+                urnas_distribuidas = {}
+
+                for urna in urnas_estoque:
+                    if qtd_contingencia_necessarias > 0 and urna.qtd > 0:
+                        if urna.qtd >= qtd_contingencia_necessarias:
+                            urnas_distribuidas[urna.modelo] = qtd_contingencia_necessarias
+                            urna.qtd -= qtd_contingencia_necessarias
+                            qtd_contingencia_necessarias = 0
+                        else:
+                            urnas_distribuidas[urna.modelo] = urna.qtd
+                            qtd_contingencia_necessarias -= urna.qtd
+                            urna.qtd = 0
+                        urna.save()
+
+                zona.qtdUrnasCont = sum(urnas_distribuidas.values())
+                zona.qtdUrnasEstoque += zona.qtdUrnasCont
+                zona.save()
+
+                for modelo, quantidade in urnas_distribuidas.items():
+                    urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
+                    if urna_queryset.exists() and quantidade > 0:
+                        urna = urna_queryset.first()
+                        Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
+                        Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
+                        DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type='CONTINGENCIA')
+
+        # Automatic distribution for remaining zones
+        remaining_zonas = ZonaEleitoral.objects.exclude(id__in=zonas_ids).exclude(id=zona_estoque_id)
+        for zona in remaining_zonas:
+            urnas_distribuidas = {}
+            qtd_urnas_necessarias = zona.qtdSecoes
+            qtd_contingencia_necessarias = int(qtd_urnas_necessarias * 0.12)
+
+            # Distribute primary urnas
             for urna in urnas_estoque:
                 if qtd_urnas_necessarias > 0 and urna.qtd > 0:
                     if urna.qtd >= qtd_urnas_necessarias:
@@ -155,32 +201,50 @@ def distribuir_manual(request):
                         urna.qtd = 0
                     urna.save()
 
-            if qtd_urnas_necessarias > 0:
-                messages.append(f"Zona {zona.nome} não tem urnas suficientes para o tipo {tipo_urna}.")
-            else:
-                if tipo_urna == 'primario':
-                    zona.qtdUrnasMRV = sum(urnas_distribuidas.values())
-                elif tipo_urna == 'contingencia':
-                    zona.qtdUrnasCont = sum(urnas_distribuidas.values())
-                
-                zona.qtdUrnasEstoque = zona.qtdUrnasMRV + zona.qtdUrnasCont
-                zona.save()
+            zona.qtdUrnasMRV = sum(urnas_distribuidas.values())
+            zona.qtdUrnasEstoque = zona.qtdUrnasMRV
+            zona.save()
 
-                for modelo, quantidade in urnas_distribuidas.items():
-                    urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
-                    if urna_queryset.exists() and quantidade > 0:
-                        urna = urna_queryset.first()
-                        Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
-                        Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
-                        DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type=tipo_urna.upper())
+            for modelo, quantidade in urnas_distribuidas.items():
+                urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
+                if urna_queryset.exists() and quantidade > 0:
+                    urna = urna_queryset.first()
+                    Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
+                    Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
+                    DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type='PRIMARIO')
+
+            urnas_distribuidas = {}
+
+            # Distribute contingency urnas
+            for urna in urnas_estoque:
+                if qtd_contingencia_necessarias > 0 and urna.qtd > 0:
+                    if urna.qtd >= qtd_contingencia_necessarias:
+                        urnas_distribuidas[urna.modelo] = qtd_contingencia_necessarias
+                        urna.qtd -= qtd_contingencia_necessarias
+                        qtd_contingencia_necessarias = 0
+                    else:
+                        urnas_distribuidas[urna.modelo] = urna.qtd
+                        qtd_contingencia_necessarias -= urna.qtd
+                        urna.qtd = 0
+                    urna.save()
+
+            zona.qtdUrnasCont = sum(urnas_distribuidas.values())
+            zona.qtdUrnasEstoque += zona.qtdUrnasCont
+            zona.save()
+
+            for modelo, quantidade in urnas_distribuidas.items():
+                urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
+                if urna_queryset.exists() and quantidade > 0:
+                    urna = urna_queryset.first()
+                    Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
+                    Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
+                    DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type='CONTINGENCIA')
 
         return JsonResponse({'messages': messages})
 
     zonas = ZonaEleitoral.objects.all().order_by('id')
-    return render(request, 'logisApp/distribuir_manual.html', {'zonas': zonas})
-
-
-
+    urna_modelos = Urna.objects.values('modelo').distinct().filter(zona_eleitoral__isnull=False)
+    return render(request, 'logisApp/distribuir_manual.html', {'zonas': zonas, 'urna_modelos': urna_modelos})
 
 
 @login_required
@@ -201,8 +265,6 @@ def add_contingency_model(zona, modelo, quantidade):
     urna.save()
     Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade)
 
-
-
 # Funções de apoio
 def get_urnas_zona(request, zona_id):
     urnas = Urna.objects.filter(zona_eleitoral_id=zona_id)
@@ -212,134 +274,90 @@ def get_municipios_zona(request, zona_id):
     municipios = MunicipioZona.objects.filter(zona_id=zona_id)
     return JsonResponse(list(municipios.values('municipio__nome', 'municipio__id')), safe=False)
 
-
-
 @login_required
 def distribuir_tudo(request):
     if request.method == 'POST':
         zona_estoque_id = request.POST.get('zona_estoque_id')
         
         if not zona_estoque_id:
-            return JsonResponse({'messages': ['ID da zona de estoque não fornecido.']}, status=400)
-
+            return JsonResponse({'messages': ['Zona de estoque não selecionada.']}, status=400)
+        
         try:
             zona_estoque = ZonaEleitoral.objects.get(id=zona_estoque_id)
         except ZonaEleitoral.DoesNotExist:
             return JsonResponse({'messages': ['Zona de estoque não encontrada.']}, status=404)
 
-        # Ensure Distribuicao instance creation
-        distribuicao = Distribuicao.objects.create(distributed_by=request.user)
-
-        zonas = ZonaEleitoral.objects.exclude(id=zona_estoque_id)
         urnas_estoque = Urna.objects.filter(zona_eleitoral=zona_estoque).order_by('-modelo')
-        messages = []
+        urnas_distribuidas = {}
 
-        for zona in zonas:
-            qtd_urnas_mrv_necessarias = zona.qtdSecoes
-            qtd_urnas_contingencia_necessarias = int(qtd_urnas_mrv_necessarias * 0.12)
+        # Reset quantities of urnas in other zones
+        for zona in ZonaEleitoral.objects.exclude(id=zona_estoque_id):
+            zona.qtdUrnasMRV = 0
+            zona.qtdUrnasCont = 0
+            zona.qtdUrnasEstoque = 0
+            zona.save()
 
-            urnas_primarias_distribuidas = {}
-            urnas_contingencia_distribuidas = {}
+        # Calculate total urnas needed
+        total_urnas_needed = sum(zona.qtdSecoes for zona in ZonaEleitoral.objects.exclude(id=zona_estoque_id))
+        total_contingency_needed = int(total_urnas_needed * 0.12)
 
-            for urna in urnas_estoque:
-                if qtd_urnas_mrv_necessarias > 0 and urna.qtd > 0:
-                    if urna.qtd >= qtd_urnas_mrv_necessarias:
-                        urnas_primarias_distribuidas[urna.modelo] = qtd_urnas_mrv_necessarias
-                        urna.qtd -= qtd_urnas_mrv_necessarias
-                        qtd_urnas_mrv_necessarias = 0
-                    else:
-                        urnas_primarias_distribuidas[urna.modelo] = urna.qtd
-                        qtd_urnas_mrv_necessarias -= urna.qtd
-                        urna.qtd = 0
-                    urna.save()
+        # Distribute primary urnas
+        for urna in urnas_estoque:
+            if total_urnas_needed > 0 and urna.qtd > 0:
+                if urna.qtd >= total_urnas_needed:
+                    urnas_distribuidas[urna.modelo] = total_urnas_needed
+                    urna.qtd -= total_urnas_needed
+                    total_urnas_needed = 0
+                else:
+                    urnas_distribuidas[urna.modelo] = urna.qtd
+                    total_urnas_needed -= urna.qtd
+                    urna.qtd = 0
+                urna.save()
 
-            for urna in urnas_estoque:
-                if qtd_urnas_contingencia_necessarias > 0 and urna.qtd > 0:
-                    primary_model = next(iter(urnas_primarias_distribuidas), None)
-                    if primary_model and is_compatible(primary_model, urna.modelo):
-                        if urna.qtd >= qtd_urnas_contingencia_necessarias:
-                            urnas_contingencia_distribuidas[urna.modelo] = qtd_urnas_contingencia_necessarias
-                            urna.qtd -= qtd_urnas_contingencia_necessarias
-                            qtd_urnas_contingencia_necessarias = 0
-                        else:
-                            urnas_contingencia_distribuidas[urna.modelo] = urna.qtd
-                            qtd_urnas_contingencia_necessarias -= urna.qtd
-                            urna.qtd = 0
-                        urna.save()
+        # Log primary urnas distribution
+        distribuicao = Distribuicao.objects.create(distributed_by=request.user, stock_zone=zona_estoque)
+        for modelo, quantidade in urnas_distribuidas.items():
+            urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
+            if urna_queryset.exists() and quantidade > 0:
+                urna = urna_queryset.first()
+                for zona in ZonaEleitoral.objects.exclude(id=zona_estoque_id):
+                    qtd_urna_per_zone = min(zona.qtdSecoes, quantidade)
+                    Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=qtd_urna_per_zone, distribution=distribuicao)
+                    Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=qtd_urna_per_zone)
+                    DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=qtd_urna_per_zone, distribution_type='PRIMARIO')
+                    quantidade -= qtd_urna_per_zone
+                    if quantidade == 0:
+                        break
 
-            if qtd_urnas_mrv_necessarias > 0 or qtd_urnas_contingencia_necessarias > 0:
-                messages.append(f"Zona {zona.nome} não tem urnas suficientes.")
-            else:
-                zona.qtdUrnasEstoque = sum(urnas_primarias_distribuidas.values()) + sum(urnas_contingencia_distribuidas.values())
-                zona.qtdUrnasMRV = sum(urnas_primarias_distribuidas.values())
-                zona.qtdUrnasCont = sum(urnas_contingencia_distribuidas.values())
-                zona.save()
+        # Distribute contingency urnas
+        urnas_distribuidas.clear()
+        for urna in urnas_estoque:
+            if total_contingency_needed > 0 and urna.qtd > 0:
+                if urna.qtd >= total_contingency_needed:
+                    urnas_distribuidas[urna.modelo] = total_contingency_needed
+                    urna.qtd -= total_contingency_needed
+                    total_contingency_needed = 0
+                else:
+                    urnas_distribuidas[urna.modelo] = urna.qtd
+                    total_contingency_needed -= urna.qtd
+                    urna.qtd = 0
+                urna.save()
 
-                for modelo, quantidade in urnas_primarias_distribuidas.items():
-                    urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
-                    if urna_queryset.exists() and quantidade > 0:
-                        urna = urna_queryset.first()
-                        solicitacao = Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
-                        Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
-                        DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type='MRV')
+        # Log contingency urnas distribution
+        for modelo, quantidade in urnas_distribuidas.items():
+            urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
+            if urna_queryset.exists() and quantidade > 0:
+                urna = urna_queryset.first()
+                for zona in ZonaEleitoral.objects.exclude(id=zona_estoque_id):
+                    qtd_urna_per_zone = min(int(zona.qtdSecoes * 0.12), quantidade)
+                    Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=qtd_urna_per_zone, distribution=distribuicao)
+                    Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=qtd_urna_per_zone)
+                    DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=qtd_urna_per_zone, distribution_type='CONTINGENCIA')
+                    quantidade -= qtd_urna_per_zone
+                    if quantidade == 0:
+                        break
 
-                for modelo, quantidade in urnas_contingencia_distribuidas.items():
-                    urna_queryset = Urna.objects.filter(modelo=modelo, zona_eleitoral=zona_estoque)
-                    if urna_queryset.exists() and quantidade > 0:
-                        urna = urna_queryset.first()
-                        solicitacao = Solicitacao.objects.create(zona_eleitoral=zona, urna=urna, quantidade=quantidade, distribution=distribuicao)
-                        Urna.objects.create(modelo=modelo, bio=urna.bio, zona_eleitoral=zona, qtd=quantidade)
-                        DistributionLog.objects.create(distribuicao=distribuicao, urna=urna, quantity=quantidade, distribution_type='CONT')
-
-        return JsonResponse({'messages': messages})
-
+        return JsonResponse({'messages': ['Distribuição concluída com sucesso.']})
+    
     zonas = ZonaEleitoral.objects.all().order_by('id')
     return render(request, 'logisApp/solicitar_tudo.html', {'zonas': zonas})
-
-@login_required
-def distribuir_materiais(request):
-    return render(request, 'logisApp/distribuir_materiais.html')
-
-@login_required
-def relatorio_urnas(request):
-    return render(request, 'logisApp/relatorio_urnas.html')
-
-@login_required
-def relatorio_materiais(request):
-    return render(request, 'logisApp/relatorio_materiais.html')
-
-@login_required
-def relatorio_zonas(request):
-    return render(request, 'logisApp/relatorio_zonas.html')
-
-@login_required
-def relatorio_geral(request):
-    zonas = ZonaEleitoral.objects.all()
-    urnas = Urna.objects.all()
-    
-    zona_urnas_data = []
-    for zona in zonas:
-        urnas_da_zona = urnas.filter(zona_eleitoral=zona)
-        zona_urnas_data.append({
-            'nome': zona.nome,
-            'urnas': list(urnas_da_zona.values('modelo', 'qtd'))
-        })
-    
-    context = {
-        'zona_urnas_data': zona_urnas_data,
-    }
-    return render(request, 'logisApp/relatorio_geral.html', context)
-
-
-def get_urnas(request):
-    zona_id = request.GET.get('zona_id')
-    if zona_id:
-        zona = ZonaEleitoral.objects.get(id=zona_id)
-        urnas = Urna.objects.filter(zona_eleitoral=zona)
-        urnas_data = [
-            {'id': urna.id, 'modelo': urna.modelo, 'qtd': urna.qtd}
-            for urna in urnas
-        ]
-        return JsonResponse({'urnas': urnas_data})
-    return JsonResponse({'urnas': []})
-
