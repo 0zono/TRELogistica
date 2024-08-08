@@ -26,20 +26,20 @@ urlpatterns = [
     
     # Paths for "Distribuir" dropdown
     path('distribuir_tudo/', UtilViews.distribuir_tudo, name='distribuir_tudo'),
-    path('distribuir_materiais/', UtilViews.distribuir_materiais, name='distribuir_materiais'),
+    #path('distribuir_materiais/', UtilViews.distribuir_materiais, name='distribuir_materiais'), ainda não implementado
     path('distribuir_manual/', UtilViews.distribuir_manual, name='distribuir_manual'),
     path('get_urnas_from_stock/', UtilViews.get_urnas_from_stock, name='get_urnas_from_stock'),
     
     # Paths for "Relatórios" dropdown
-    path('relatorio_urnas/', UtilViews.relatorio_urnas, name='relatorio_urnas'),
-    path('relatorio_materiais/', UtilViews.relatorio_materiais, name='relatorio_materiais'),
-    path('relatorio_zonas/', UtilViews.relatorio_zonas, name='relatorio_zonas'),
-    path('relatorio_geral/', UtilViews.relatorio_geral, name='relatorio_geral'),
+    #path('relatorio_urnas/', UtilViews.relatorio_urnas, name='relatorio_urnas'),
+    #path('relatorio_materiais/', UtilViews.relatorio_materiais, name='relatorio_materiais'),
+    #path('relatorio_zonas/', UtilViews.relatorio_zonas, name='relatorio_zonas'),
+    #path('relatorio_geral/', UtilViews.relatorio_geral, name='relatorio_geral'),
 
     path('upload/', UploadViews.upload_file, name='upload_file'),
     path('upload/success/', TemplateView.as_view(template_name="success.html"), name='upload_success'),
     path('listar_distribuicoes/', UploadViews.listar_distribuicoes, name='listar_distribuicoes'),
-    path('get_urnas/<int:zona_id>/', UtilViews.get_urnas, name='get_urnas'),
+    #path('get_urnas/<int:zona_id>/', UtilViews.get_urnas, name='get_urnas'),
 
 
 ]
