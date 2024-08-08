@@ -41,12 +41,23 @@
             {% endfor %}
         </div>
         
+        <!-- Selecione o Modelo de Urna -->
+        <div class="form-group mt-4">
+            <label for="urna_modelo">Modelo de Urna:</label>
+            <select name="urna_modelo" id="urna_modelo" class="form-control">
+                {% for modelo in urna_modelos %}
+                    <option value="{{ modelo.modelo }}">{{ modelo.modelo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
         <!-- Selecione o Tipo de Urna -->
         <div class="form-group mt-4">
             <label for="tipo_urna">Tipo de Urna:</label>
             <select name="tipo_urna" id="tipo_urna" class="form-control">
                 <option value="primario">Primário</option>
                 <option value="contingencia">Contingência</option>
+                <option value="ambos">Ambos</option>
             </select>
         </div>
         
