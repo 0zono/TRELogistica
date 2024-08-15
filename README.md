@@ -51,3 +51,7 @@ Motores de template, usados para desenvolver o template
 ```
 
 ### 5.
+```sh
+4. Instalar Pandas
+pip install pandas
+```
